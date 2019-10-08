@@ -6,13 +6,14 @@
 # usage: rcloud {option} [input] [output] [-s]
 # 
 # options:
-#   sync (y)      sync google remote and exit
+#   sync (y)      sync remote name and exit
 #   copy (cp)     a specific file to remote
-#   link (l)      get share link for a file or folder
+#   link (l)      get share link to file or folder
 #   mount (m)     start sync and mount as folder
 #   umount (u)    stop rclone remote syncing
 #   remount (r)   try and refresh remote sync
-#   check (c)     status for rclone remote mount
+#   status (s)    status for rclone remote mount
+#   check (c)     differences between local and remote
 #
 # This is of course NOT intended as a desktop cloud solution.
 
@@ -61,6 +62,9 @@ function sync {
     rclone -u copy "${REMOTE}:" "$DIR" &&
     rclone -u copy "$DIR" "${REMOTE}:" &&
     echo "Synced ${REMOTE}"; }
+
+function check { 
+    rclone check "${REMOTE}:" "$DIR" --size-only; }
 
 function status {
     if [[ "$ISMOUNTED" != "" ]]; then
@@ -115,8 +119,12 @@ case "$ARG" in
         sync
         ;;
 
-    c|check|status)
+    s|status)
         status
+        ;;
+
+    c|check)
+        check
         ;;
 
     m|mount|start|s)
