@@ -5,7 +5,7 @@ Bash script to interact with rclone and a preconfigured
 remote through the argument actions available below:
 
 ```
-usage: rcloud {option} [input] [output] [-s]
+usage: rcloud {option} [input] [output]
 
 options:
   sync (y)      sync remote name and exit
@@ -19,3 +19,5 @@ options:
 ```
 
 This is of course NOT intended as a desktop cloud solution.
+
+Tested with rclone v1.49.5 on linux/amd64 (go1.13.1).

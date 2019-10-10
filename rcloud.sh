@@ -31,10 +31,9 @@ DIR=""
 
 # define vars
 
-ARG="$1"    	# argument to execute
-FILE="$2"    	# file or folder to upload
-FOLDER="$3"    	# path to upload file or folder to
-SHAREONLY="$4"  # flag "-s" for sharing file only
+ARG="$1"        # argument to execute
+FILE="$2"       # file or folder to upload
+FOLDER="$3"     # path to upload file or folder to
 
 [[ "$FOLDER" = "" ]] &&
 FOLDER="share" # default
@@ -42,15 +41,12 @@ FOLDER="share" # default
 [[ "$FOLDER" = "/" ]] &&
 FOLDER="" # copy to root
 
-[[ "$SHAREONLY" = "-s" || "$FOLDER" = "-s" ]] &&
-SHAREONLY=true # disable copying
-
 #################################################
 
 # define functions
 
 function help {
-    head -n 15 "$0" | tail -n 10 | sed 's/# //'; }
+    head -n 16 "$0" | tail -n 11 | sed 's/# //'; }
 
 function getpid {
     PID="$(ps aux | grep -i "rclone mount " | grep -v grep | awk '{print $2}')"; }
@@ -70,8 +66,8 @@ function status {
     if [[ "$ISMOUNTED" != "" ]]; then
         echo "$REMOTE mounted in $DIR [$PID]"
     elif [[ "$PID" != "" && "$ISMOUNTED" = "" ]]; then
-    	echo "Killing remaining process $PID..."
-    	kill -9 "$PID"
+        echo "Killing remaining process $PID..."
+        kill -9 "$PID"
     else
         echo "$REMOTE is not currently mounted"; fi; }
 
@@ -86,8 +82,8 @@ function umount {
     if [[ "$ISMOUNTED" = "" && "$PID" = "" ]]; then
         echo "$REMOTE is not currently mounted"
     elif [[ "$PID" != "" && "$ISMOUNTED" = "" ]]; then
-    	echo "Killing remaining process $PID..."
-    	kill -9 "$PID"
+        echo "Killing remaining process $PID..."
+        kill -9 "$PID"
     else
         fusermount -uz "$DIR" &&
         echo "$REMOTE umounted from $DIR [$PID]" &&
@@ -95,7 +91,7 @@ function umount {
         kill -9 "$PID"; fi; }
 
 function copy {
-    rclone copy "$FILE" "${REMOTE}:$FOLDER" &&
+    rclone copyto "$FILE" "${REMOTE}:$FOLDER" &&
     echo "Sent $FILE to ${REMOTE}:${FOLDER}"; }
 
 function share {
@@ -128,29 +124,29 @@ case "$ARG" in
         ;;
 
     m|mount|start|s)
-    	mount
-    	;;
+        mount
+        ;;
 
     u|umount|stop|exit|quit|q)
-    	umount
-    	;;
+        umount
+        ;;
 
     r|remount|refresh|restart)
-    	umount
-    	sleep 0.5
-    	getpid
-    	ismounted
-    	mount
-    	;;
+        umount
+        sleep 0.5
+        getpid
+        ismounted
+        mount
+        ;;
 
     cp|copy|send)
-    	copy
-    	;;
+        copy
+        ;;
 
     l|link|share)
-    	[[ "$SHAREONLY" != true ]] && copy
-    	share
-    	;;
+        copy
+        share
+        ;;
 
     *) # default
         help
