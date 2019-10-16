@@ -55,9 +55,17 @@ function ismounted {
     ISMOUNTED="$(findmnt | grep rclone | grep "$REMOTE")"; }
 
 function sync {
-    rclone -u copy "${REMOTE}:" "$DIR" &&
-    rclone -u copy "$DIR" "${REMOTE}:" &&
-    echo "Synced ${REMOTE}"; }
+    printf "Sync data from:\n(L)ocal system\n(R)emote server\n> " && read S
+    [[ ${S,,} = "l" ]] && syncfromlocal
+    [[ ${S,,} = "r" ]] && syncfromremote; }
+
+function syncfromlocal {
+    echo "Syncing $DIR => ${REMOTE}:..."
+    rclone -u sync "$DIR" "${REMOTE}:" -P; } # --drive-acknowledge-abuse
+
+function syncfromremote {
+    echo "Syncing $REMOTE => ${DIR}..."
+    rclone -u sync "${REMOTE}:" "$DIR" -P; } # --drive-acknowledge-abuse
 
 function check { 
     rclone check "${REMOTE}:" "$DIR" --size-only; }
@@ -113,6 +121,14 @@ case "$ARG" in
 
     y|sync)
         sync
+        ;;
+
+    syncfromlocal)
+        syncfromlocal
+        ;;
+
+    copyfromremote)
+        syncfromremote
         ;;
 
     s|status)
