@@ -1,7 +1,7 @@
 remote_cloud
 ---
 
-Bash script to interact with rclone and a preconfigured
+Bash script to interact with **rclone** and a preconfigured
 remote through the argument actions available below:
 
 ```

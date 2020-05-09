@@ -14,16 +14,10 @@
 #   list (ls)         contents from input remote path
 #   link (l)          share link to input file or folder
 #   check (c)         differences between local and remote
-#   mount (m)         mount remote directory (*)
-#   umount (u)        stop remote mount syncing (*)
-#   remount (r)       try and refresh remote mount (*)
-#   status (s)        status for remote mount (*)
-#
-# Arguments marked with an asterisk are EXPERIMENTAL rclone features.
-#
-# This is of course NOT intended as a desktop cloud solution.
-#
-# Tested with rclone v1.49.5 on linux/amd64 (go1.13.1).
+#   mount (m)         mount remote directory
+#   umount (u)        stop remote mount syncing
+#   remount (r)       try and refresh remote mount
+#   status (s)        status for remote mount
 
 # REQUIRED: original remote name as in rclone
 REMOTE=""
@@ -40,12 +34,14 @@ if [[ "$OPTION" != "" && "$OPTION" != '-h' ]]; then
 
     # check user settings
     [[ "$REMOTE" = "" || "$DIR" = "" ]] &&
-    echo "Error: missing user configuration (REMOTE/DIR)." && exit
+    echo "Error: missing user configuration (REMOTE/DIR)." &&
+    exit 2
 
-    # create remote directory
+    # check remote directory
     [[ ! -d "$DIR" ]] &&
-    mkdir -p "$DIR"
-
+    echo "Error: folder '$DIR' does not exist." &&
+    exit 2
+    
     # check output parameter
     [[ "$OUTPUT" = "/" ]] &&
     OUTPUT=""
@@ -57,7 +53,7 @@ if [[ "$OPTION" != "" && "$OPTION" != '-h' ]]; then
 # define functions
 
 function help {
-    head -n 20 "$0" | tail -n 15 | sed 's/# //;s/ (\*)//;2d'; }
+    head -n 20 "$0" | tail -n 15 | sed '2d;s/# //'; }
 
 function sync {
     printf "Sync data from:\n(L)ocal system\n(R)emote server\n> " && read S
@@ -110,18 +106,18 @@ function link {
     rclone link "${REMOTE}:${INPUT}"; }
 
 function mount {
-    if [[ $(ls -1a "$DIR" | sed '1d;2d') != "" ]]; then
-        echo "Error: directory '$DIR' must be empty."
-    elif [[ "$ISMOUNTED" != "" ]]; then
+    if [[ "$ISMOUNTED" > 0 ]]; then
         echo "Remote $REMOTE already mounted in '$DIR' [$PID]."
+    elif [[ $(ls -1a "$DIR" | sed '1d;2d') != "" ]]; then
+        echo "Error: directory '$DIR' must be empty."
     else
         rclone mount "${REMOTE}:" "$DIR" -L --allow-non-empty & disown
         echo "Remote $REMOTE mounted in '$DIR' [$!]."; fi; }
 
 function umount {
-    if [[ "$ISMOUNTED" = "" && "$PID" = "" ]]; then
+    if [[ "$ISMOUNTED" = 0 && "$PID" = "" ]]; then
         echo "Remote $REMOTE is not currently mounted."
-    elif [[ "$PID" != "" && "$ISMOUNTED" = "" ]]; then
+    elif [[ "$PID" != "" && "$ISMOUNTED" = 0 ]]; then
         echo "Killing remaining process $PID..."
         kill -9 "$PID"
     else
@@ -131,9 +127,9 @@ function umount {
         kill -9 "$PID"; fi; }
 
 function status {
-    if [[ "$ISMOUNTED" != "" ]]; then
+    if [[ "$ISMOUNTED" > 0 ]]; then
         echo "Remote $REMOTE mounted in '$DIR' [$PID]."
-    elif [[ "$PID" != "" && "$ISMOUNTED" = "" ]]; then
+    elif [[ "$PID" != "" && "$ISMOUNTED" = 0 ]]; then
         echo "Killing remaining process $PID..."
         kill -9 "$PID"
     else
@@ -143,12 +139,10 @@ function check {
     rclone check "${REMOTE}:" "$DIR" --size-only; }
 
 function getpid {
-    PID="$(ps aux | grep -i "rclone mount " | grep -v grep | awk '{print $2}')"; }
+    PID="$(ps aux | grep -i "rclone mount $REMOTE" | grep -v grep | awk '{print $2}')"; }
 
 function ismounted {
-    ISMOUNTED="$(findmnt | grep rclone | grep "$DIR" | grep "${REMOTE}:")"; }
-
-#################################################
+    ISMOUNTED="$(findmnt | grep rclone | grep "$DIR" | grep -c "${REMOTE}:")"; }
 
 # execute
 
