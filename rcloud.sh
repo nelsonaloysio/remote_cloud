@@ -3,7 +3,7 @@
 # Bash script to interact with rclone and a preconfigured
 # remote through the argument actions available below:
 #
-# usage: rcloud {option} [input] [output]
+# usage: rcloud REMOTE OPTION [input] [output]
 #
 # options:
 #   sync (y)          sync remote name and exit
@@ -14,21 +14,27 @@
 #   list (ls)         contents from input remote path
 #   link (l)          share link to input file or folder
 #   check (c)         differences between local and remote
-#   mount (m)         mount remote directory
-#   umount (u)        stop remote mount syncing
-#   remount (r)       try and refresh remote mount
-#   status (s)        status for remote mount
+#   mount (m)         mount remote directory (*)
+#   umount (u)        stop remote mount syncing (*)
+#   remount (r)       try and refresh remote mount (*)
+#   status (s)        status for remote mount (*)
+#
+# Arguments marked with an asterisk are EXPERIMENTAL rclone features.
+#
+# This is of course NOT intended as a desktop cloud solution.
+#
+# Tested with rclone v1.49.5 on linux/amd64 (go1.13.1).
 
-# REQUIRED: original remote name as in rclone
-REMOTE=""
+# original remote name as in rclone
+REMOTE="$1"
 
-# REQUIRED: path to sync or mount files
-DIR=""
+# path to sync or mount files
+DIR="${HOME}/.remote/$1"
 
-# define vars
-OPTION="$1"    # action to execute
-INPUT="$2"     # file or folder as input
-OUTPUT="$3"    # output path to upload to
+# function variables
+OPTION="$2"    # action to execute
+INPUT="$3"     # file or folder as input
+OUTPUT="$4"    # output path to upload to
 
 if [[ "$OPTION" != "" && "$OPTION" != '-h' ]]; then
 
@@ -37,11 +43,10 @@ if [[ "$OPTION" != "" && "$OPTION" != '-h' ]]; then
     echo "Error: missing user configuration (REMOTE/DIR)." &&
     exit 2
 
-    # check remote directory
+    # create remote directory
     [[ ! -d "$DIR" ]] &&
-    echo "Error: folder '$DIR' does not exist." &&
-    exit 2
-    
+    mkdir -p "$DIR"
+
     # check output parameter
     [[ "$OUTPUT" = "/" ]] &&
     OUTPUT=""
@@ -53,7 +58,7 @@ if [[ "$OPTION" != "" && "$OPTION" != '-h' ]]; then
 # define functions
 
 function help {
-    head -n 20 "$0" | tail -n 15 | sed '2d;s/# //'; }
+    head -n 20 "$0" | tail -n 15 | sed 's/# //;s/ (\*)//;2d'; }
 
 function sync {
     printf "Sync data from:\n(L)ocal system\n(R)emote server\n> " && read S
@@ -62,11 +67,11 @@ function sync {
 
 function syncfromlocal {
     echo "Syncing '$DIR' => ${REMOTE}..."
-    rclone -u sync "$DIR" "${REMOTE}:" -P; } # --drive-acknowledge-abuse
+    rclone -u sync "$DIR" "${REMOTE}:" -P --drive-acknowledge-abuse; }
 
 function syncfromremote {
     echo "Syncing $REMOTE => '${DIR}'..."
-    rclone -u sync "${REMOTE}:" "$DIR" -P; } # --drive-acknowledge-abuse
+    rclone -u sync "${REMOTE}:" "$DIR" -P --drive-acknowledge-abuse; }
 
 function copy {
     if [[ "$INPUT" = "" ]]; then
@@ -142,7 +147,7 @@ function getpid {
     PID="$(ps aux | grep -i "rclone mount $REMOTE" | grep -v grep | awk '{print $2}')"; }
 
 function ismounted {
-    ISMOUNTED="$(findmnt | grep rclone | grep "$DIR" | grep -c "${REMOTE}:")"; }
+    ISMOUNTED="$(findmnt | grep rclone | grep "$DIR" | grep -c "${REMOTE}")"; }
 
 # execute
 
@@ -151,7 +156,7 @@ ismounted # check if remote is mounted in directory
 
 case "$OPTION" in
 
-    y|sync)
+        y|sync)
         sync
         ;;
 

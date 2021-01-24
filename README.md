@@ -1,11 +1,11 @@
 remote_cloud
 ---
 
-Bash script to interact with **rclone** and a preconfigured
-remote through the argument actions available below:
+Bash script to interact with **rclone** and preconfigured
+remotes through the argument actions available below:
 
 ```
-usage: rcloud {option} [input] [output]
+usage: rcloud REMOTE OPTION [input] [output]
 
 options:
   sync (y)          sync remote name and exit
