@@ -9,10 +9,6 @@ usage: rcloud REMOTE OPTION [input] [output]
 
 options:
   sync (y)          sync remote name and exit
-  copy (cp)         input file to remote output
-  remove (rm)       input file from remote path
-  removedir (rmdir) input folder from remote path
-  makedir (mkdir)   new input folder in remote path
   list (ls)         contents from input remote path
   link (l)          share link to input file or folder
   check (c)         differences between local and remote

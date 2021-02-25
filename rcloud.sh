@@ -7,10 +7,6 @@
 #
 # options:
 #   sync (y)          sync remote name and exit
-#   copy (cp)         input file to remote output
-#   remove (rm)       input file from remote path
-#   removedir (rmdir) input folder from remote path
-#   makedir (mkdir)   new input folder in remote path
 #   list (ls)         contents from input remote path
 #   link (l)          share link to input file or folder
 #   check (c)         differences between local and remote
@@ -29,39 +25,28 @@
 REMOTE="$1"
 
 # path to sync or mount files
-DIR="${HOME}/.remote/$1"
+DIR="${HOME}/Remote/$1"
 
 # function variables
 OPTION="$2"    # action to execute
 INPUT="$3"     # file or folder as input
-OUTPUT="$4"    # output path to upload to
 
 if [[ "$OPTION" != "" && "$OPTION" != '-h' ]]; then
-
     # check user settings
     [[ "$REMOTE" = "" || "$DIR" = "" ]] &&
     echo "Error: missing user configuration (REMOTE/DIR)." &&
     exit 2
-
     # create remote directory
     [[ ! -d "$DIR" ]] &&
-    mkdir -p "$DIR"
-
-    # check output parameter
-    [[ "$OUTPUT" = "/" ]] &&
-    OUTPUT=""
-
-    # append root path to output
-    [[ "$OUTPUT{0:1}" != "/" ]] &&
-    OUTPUT="/${OUTPUT}"; fi
+    mkdir -p "$DIR"; fi
 
 # define functions
 
 function help {
-    head -n 20 "$0" | tail -n 15 | sed 's/# //;s/ (\*)//;2d'; }
+    head -n 16 "$0" | tail -n 11 | sed 's/# //;s/ (\*)//;2d'; }
 
 function sync {
-    printf "Sync data from:\n(L)ocal system\n(R)emote server\n> " && read S
+    printf "Sync data from source:\n(L)ocal system\n(R)emote server\n> " && read S
     [[ ${S,,} = "l" ]] && syncfromlocal
     [[ ${S,,} = "r" ]] && syncfromremote; }
 
@@ -72,37 +57,6 @@ function syncfromlocal {
 function syncfromremote {
     echo "Syncing $REMOTE => '${DIR}'..."
     rclone -u sync "${REMOTE}:" "$DIR" -P --drive-acknowledge-abuse; }
-
-function copy {
-    if [[ "$INPUT" = "" ]]; then
-        echo "Error: missing input parameter."
-    elif [[ -d "$INPUT" ]]; then
-        echo "Copying '$INPUT' to ${REMOTE}:${OUTPUT}..."
-        rclone copy "$INPUT" "${REMOTE}:${OUTPUT}" -P
-    elif [[ -f "$INPUT" ]]; then
-        echo "Copying '$INPUT' to ${REMOTE}:${OUTPUT}..."
-        rclone copy "$INPUT" "${REMOTE}:${OUTPUT}" -P; fi; }
-
-function remove {
-    if [[ "$INPUT" = "" ]]; then
-        echo "Error: missing input parameter."
-    else
-        echo "Deleting '$INPUT' from $REMOTE..."
-        rclone deletefile "${REMOTE}:${INPUT}"; fi; }
-
-function removedir {
-    if [[ "$INPUT" = "" ]]; then
-        echo "Error: missing input parameter."
-    else
-        echo "Deleting '$INPUT' folder from $REMOTE..."
-        rclone rmdir "${REMOTE}:$INPUT"; fi; }
-
-function makedir {
-    if [[ "$INPUT" = "" ]]; then
-        echo "Error: missing input parameter."
-    else
-        echo "Creating '$INPUT' folder in $REMOTE..."
-        rclone mkdir "${REMOTE}:$INPUT"; fi; }
 
 function list {
     rclone lsf "${REMOTE}:${INPUT}"; }
